@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register - TaskFlow</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234f46e5'><path d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z'/></svg>">
+</head>
+<body>
+
+  <!-- Top bar with home link and theme toggle -->
+  <div style="position: absolute; top: 1.5rem; left: 1.5rem; right: 1.5rem; display: flex; justify-content: space-between; align-items: center; z-index: 10;">
+    <a href="index.html" class="brand-logo" style="font-size: 1.2rem;">
+      <div class="brand-icon" style="width: 30px; height: 30px; font-size: 0.9rem;">✓</div>
+      <span>TaskFlow</span>
+    </a>
+    <button id="themeToggleBtn" class="btn-icon" title="Toggle Theme">🌙</button>
+  </div>
+
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h1>Create Account</h1>
+        <p>Get started with your personal TaskFlow manager</p>
+      </div>
+
+      <form id="registerForm">
+        <div class="form-group">
+          <label class="form-label" for="name">Full Name</label>
+          <input 
+            type="text" 
+            id="name" 
+            class="form-control" 
+            placeholder="John Doe" 
+            required 
+            autocomplete="name"
+          >
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="email">Email Address</label>
+          <input 
+            type="email" 
+            id="email" 
+            class="form-control" 
+            placeholder="john@example.com" 
+            required 
+            autocomplete="email"
+          >
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <input 
+            type="password" 
+            id="password" 
+            class="form-control" 
+            placeholder="Minimum 6 characters" 
+            required 
+            autocomplete="new-password"
+            minlength="6"
+          >
+          <div class="password-strength">
+            <div id="strengthBar" class="password-strength-bar"></div>
+          </div>
+          <div id="strengthText" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+            Password must be at least 6 characters
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="confirmPassword">Confirm Password</label>
+          <input 
+            type="password" 
+            id="confirmPassword" 
+            class="form-control" 
+            placeholder="Repeat your password" 
+            required 
+            autocomplete="new-password"
+          >
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full" id="submitBtn" style="margin-top: 0.5rem; padding: 0.8rem;">
+          Create Free Account
+        </button>
+      </form>
+
+      <div style="text-align: center; margin-top: 1.75rem; font-size: 0.9rem; color: var(--text-secondary);">
+        Already have an account? <a href="login.html" style="font-weight: 600;">Sign in here</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Redirect if already logged in
+      if (Auth.redirectIfAuthenticated()) return;
+
+      const pwd = document.getElementById('password');
+      const strengthBar = document.getElementById('strengthBar');
+      const strengthText = document.getElementById('strengthText');
+
+      // Live password strength indicator
+      pwd.addEventListener('input', () => {
+        const val = pwd.value;
+        let score = 0;
+        if (val.length >= 6) score += 25;
+        if (val.length >= 10) score += 25;
+        if (/[A-Z]/.test(val) && /[0-9]/.test(val)) score += 25;
+        if (/[^A-Za-z0-9]/.test(val)) score += 25;
+
+        strengthBar.style.width = `${score}%`;
+        if (score <= 25) {
+          strengthBar.style.backgroundColor = 'var(--danger)';
+          strengthText.textContent = 'Weak password';
+          strengthText.style.color = 'var(--danger)';
+        } else if (score <= 50) {
+          strengthBar.style.backgroundColor = 'var(--warning)';
+          strengthText.textContent = 'Fair password';
+          strengthText.style.color = 'var(--warning)';
+        } else if (score <= 75) {
+          strengthBar.style.backgroundColor = 'var(--info)';
+          strengthText.textContent = 'Good password';
+          strengthText.style.color = 'var(--info)';
+        } else {
+          strengthBar.style.backgroundColor = 'var(--success)';
+          strengthText.textContent = 'Strong password! 🔒';
+          strengthText.style.color = 'var(--success)';
+        }
+      });
+
+      // Handle form registration
+      const form = document.getElementById('registerForm');
+      const submitBtn = document.getElementById('submitBtn');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('name').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+
+        if (password !== confirmPassword) {
+          showToast('Passwords do not match. Please verify.', 'error');
+          return;
+        }
+
+        if (password.length < 6) {
+          showToast('Password must be at least 6 characters long.', 'warning');
+          return;
+        }
+
+        try {
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Creating account...';
+
+          const res = await Auth.register(name, email, password);
+          if (res.success) {
+            showToast('Account created successfully! Redirecting...', 'success');
+            setTimeout(() => {
+              window.location.href = '/dashboard.html';
+            }, 500);
+          }
+        } catch (error) {
+          showToast(error.message, 'error');
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Create Free Account';
+        }
+      });
+    });
+  </script>
+</body>
+</html>

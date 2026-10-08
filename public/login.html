@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - TaskFlow</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234f46e5'><path d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z'/></svg>">
+</head>
+<body>
+
+  <!-- Top bar with home link and theme toggle -->
+  <div style="position: absolute; top: 1.5rem; left: 1.5rem; right: 1.5rem; display: flex; justify-content: space-between; align-items: center; z-index: 10;">
+    <a href="index.html" class="brand-logo" style="font-size: 1.2rem;">
+      <div class="brand-icon" style="width: 30px; height: 30px; font-size: 0.9rem;">✓</div>
+      <span>TaskFlow</span>
+    </a>
+    <button id="themeToggleBtn" class="btn-icon" title="Toggle Theme">🌙</button>
+  </div>
+
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h1>Welcome Back</h1>
+        <p>Log in to access and manage your tasks</p>
+      </div>
+
+      <!-- Quick Demo Account Fill -->
+      <div class="demo-account-box">
+        <div>💡 <strong>College Project Demo:</strong> Quick login with test credentials:</div>
+        <div style="margin-top: 0.25rem;">Email: <code>demo@example.com</code> | Pass: <code>password123</code></div>
+        <button type="button" class="btn btn-secondary btn-sm" id="fillDemoBtn">
+          ⚡ Autofill Demo Credentials
+        </button>
+      </div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label class="form-label" for="email">Email Address</label>
+          <input 
+            type="email" 
+            id="email" 
+            class="form-control" 
+            placeholder="alex@example.com" 
+            required 
+            autocomplete="email"
+          >
+        </div>
+
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <label class="form-label" for="password" style="margin-bottom: 0;">Password</label>
+            <a href="#" style="font-size: 0.8rem; color: var(--text-muted);" onclick="alert('In this demonstration project, you can use the demo account or register a new one.'); return false;">Forgot?</a>
+          </div>
+          <div style="position: relative;">
+            <input 
+              type="password" 
+              id="password" 
+              class="form-control" 
+              placeholder="••••••••" 
+              required 
+              autocomplete="current-password"
+            >
+            <button 
+              type="button" 
+              id="togglePasswordBtn" 
+              style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 1.1rem;"
+              title="Show/Hide Password"
+            >👁️</button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full" id="submitBtn" style="margin-top: 0.5rem; padding: 0.8rem;">
+          Sign In to Dashboard
+        </button>
+      </form>
+
+      <div style="text-align: center; margin-top: 1.75rem; font-size: 0.9rem; color: var(--text-secondary);">
+        Don't have an account? <a href="register.html" style="font-weight: 600;">Create one now</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Redirect if already logged in
+      if (Auth.redirectIfAuthenticated()) return;
+
+      // Check if redirected from expired session
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('expired') === 'true') {
+        showToast('Your session has expired. Please log in again.', 'warning');
+      }
+
+      // Password toggle
+      const pwdInput = document.getElementById('password');
+      const toggleBtn = document.getElementById('togglePasswordBtn');
+      if (toggleBtn && pwdInput) {
+        toggleBtn.addEventListener('click', () => {
+          if (pwdInput.type === 'password') {
+            pwdInput.type = 'text';
+            toggleBtn.textContent = '🙈';
+          } else {
+            pwdInput.type = 'password';
+            toggleBtn.textContent = '👁️';
+          }
+        });
+      }
+
+      // Demo credentials autofill
+      const fillDemoBtn = document.getElementById('fillDemoBtn');
+      if (fillDemoBtn) {
+        fillDemoBtn.addEventListener('click', () => {
+          document.getElementById('email').value = 'demo@example.com';
+          document.getElementById('password').value = 'password123';
+          showToast('Demo credentials filled! Click "Sign In"', 'info');
+        });
+      }
+
+      // Form submission
+      const form = document.getElementById('loginForm');
+      const submitBtn = document.getElementById('submitBtn');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+
+        try {
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Signing in...';
+
+          const res = await Auth.login(email, password);
+          if (res.success) {
+            showToast('Login successful! Redirecting...', 'success');
+            setTimeout(() => {
+              window.location.href = '/dashboard.html';
+            }, 500);
+          }
+        } catch (error) {
+          showToast(error.message, 'error');
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Sign In to Dashboard';
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - TaskFlow</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234f46e5'><path d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z'/></svg>">
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Collapsible Sidebar -->
+    <aside class="app-sidebar" id="appSidebar">
+      <div class="sidebar-header">
+        <a href="dashboard.html" class="brand-logo">
+          <div class="brand-icon">✓</div>
+          <span>TaskFlow</span>
+        </a>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">Views</div>
+        
+        <a href="#" class="nav-item active" data-filter="all">
+          <div class="nav-item-content">
+            <span>📋</span>
+            <span>All Tasks</span>
+          </div>
+          <span class="nav-badge" id="sidebarBadgeTotal">0</span>
+        </a>
+
+        <a href="#" class="nav-item" data-filter="pending">
+          <div class="nav-item-content">
+            <span>⏳</span>
+            <span>Pending</span>
+          </div>
+          <span class="nav-badge" id="sidebarBadgePending">0</span>
+        </a>
+
+        <a href="#" class="nav-item" data-filter="inprogress">
+          <div class="nav-item-content">
+            <span>🔄</span>
+            <span>In Progress</span>
+          </div>
+          <span class="nav-badge" id="sidebarBadgeInProgress">0</span>
+        </a>
+
+        <a href="#" class="nav-item" data-filter="completed">
+          <div class="nav-item-content">
+            <span>✅</span>
+            <span>Completed</span>
+          </div>
+          <span class="nav-badge" id="sidebarBadgeCompleted">0</span>
+        </a>
+
+        <a href="#" class="nav-item" data-filter="overdue">
+          <div class="nav-item-content">
+            <span>⚠️</span>
+            <span>Overdue</span>
+          </div>
+          <span class="nav-badge" id="sidebarBadgeOverdue" style="background: var(--danger-light); color: var(--danger);">0</span>
+        </a>
+
+        <div class="nav-section-title">Quick Action</div>
+        <div style="padding: 0.5rem 0.25rem;">
+          <button class="btn btn-primary w-full open-create-modal" style="font-size: 0.85rem;">
+            + New Task
+          </button>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-snippet" style="cursor: pointer;" onclick="openModal('profileModal')" title="View profile & settings">
+          <div class="user-avatar">U</div>
+          <div class="user-meta">
+            <div class="user-name">Loading...</div>
+            <div class="user-email">user@taskflow.io</div>
+          </div>
+        </div>
+        <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem;">
+          <button class="btn btn-secondary btn-sm w-full" onclick="openModal('profileModal')">⚙️ Settings</button>
+          <button class="btn btn-outline btn-sm" id="logoutBtn" title="Log Out">🚪</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace Area -->
+    <div class="app-main">
+      <!-- Header -->
+      <header class="app-header">
+        <div style="display: flex; align-items: center; gap: 1rem; width: 100%; max-width: 500px;">
+          <button id="mobileMenuBtn" class="btn-icon mobile-menu-toggle" title="Toggle Sidebar">☰</button>
+          <div class="header-search">
+            <span class="search-icon">🔍</span>
+            <input 
+              type="text" 
+              id="searchInput" 
+              class="form-control" 
+              placeholder="Search tasks by title or details..."
+            >
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button id="themeToggleBtn" class="btn-icon" title="Toggle Theme">🌙</button>
+          <button class="btn btn-primary open-create-modal">
+            <span>+</span> <span>New Task</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <main class="app-content">
+
+        <!-- Due Date Warning Reminder Banner -->
+        <div id="reminderBanner" class="reminder-banner" style="display: none;">
+          <div class="reminder-text">
+            <span class="reminder-icon">⚠️</span>
+            <span id="reminderMessage">Loading reminders...</span>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="handleSidebarFilter('overdue')">
+            Review Overdue Tasks
+          </button>
+        </div>
+
+        <!-- Dashboard Statistics Cards Grid -->
+        <section class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-info">
+              <h3>Total Tasks</h3>
+              <div class="stat-value" id="statTotal">0</div>
+              <div class="stat-sub">Across all categories</div>
+            </div>
+            <div class="stat-icon total">📁</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-info">
+              <h3>In Progress</h3>
+              <div class="stat-value" id="statInProgress">0</div>
+              <div class="stat-sub">Active right now</div>
+            </div>
+            <div class="stat-icon inprogress">🔄</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-info">
+              <h3>Pending</h3>
+              <div class="stat-value" id="statPending">0</div>
+              <div class="stat-sub">Waiting to start</div>
+            </div>
+            <div class="stat-icon pending">⏳</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-info">
+              <h3>Completed</h3>
+              <div class="stat-value" id="statCompleted">0</div>
+              <div class="stat-sub">Finished tasks</div>
+            </div>
+            <div class="stat-icon completed">✅</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-info">
+              <h3>Overdue</h3>
+              <div class="stat-value" id="statOverdue" style="color: var(--danger);">0</div>
+              <div class="stat-sub">Past due date</div>
+            </div>
+            <div class="stat-icon overdue">⚠️</div>
+          </div>
+        </section>
+
+        <!-- Completion Progress Bar -->
+        <div class="progress-card">
+          <div class="progress-header">
+            <div>
+              <strong style="font-size: 0.95rem;">Overall Productivity Progress</strong>
+              <div style="font-size: 0.8rem; color: var(--text-muted);">Real-time completion milestone</div>
+            </div>
+            <span id="progressPctText" style="font-weight: 700; color: var(--primary);">0% Completed</span>
+          </div>
+          <div class="progress-track">
+            <div id="progressBarFill" class="progress-bar-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <!-- Controls: Filters, Sorting & Grouping -->
+        <div class="controls-bar">
+          <div class="filter-group">
+            <select id="statusFilter" class="filter-select">
+              <option value="All">All Statuses</option>
+              <option value="Pending">Pending</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+            </select>
+
+            <select id="priorityFilter" class="filter-select">
+              <option value="All">All Priorities</option>
+              <option value="High">High Priority</option>
+              <option value="Medium">Medium Priority</option>
+              <option value="Low">Low Priority</option>
+            </select>
+
+            <select id="categoryFilter" class="filter-select">
+              <option value="All">All Categories</option>
+              <option value="College">College</option>
+              <option value="Personal">Personal</option>
+              <option value="Project">Project</option>
+              <option value="Work">Work</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="sortFilter" style="font-size: 0.85rem; color: var(--text-muted);">Sort by:</label>
+            <select id="sortFilter" class="filter-select">
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="dueAsc">Due Date (Earliest)</option>
+              <option value="dueDesc">Due Date (Latest)</option>
+              <option value="priorityHigh">Priority (High to Low)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Task List / Grid Header -->
+        <div class="tasks-header">
+          <h2 style="font-size: 1.25rem;">My Tasks</h2>
+        </div>
+
+        <!-- Tasks Dynamic Grid -->
+        <div id="tasksContainer" class="tasks-grid">
+          <!-- Injected via JavaScript -->
+        </div>
+
+        <!-- Pagination Controls -->
+        <div id="paginationContainer" class="pagination">
+          <!-- Injected via JavaScript -->
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- 1. Create Task Modal -->
+  <div class="modal-overlay" id="createTaskModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="font-size: 1.25rem;">Create New Task</h3>
+        <button class="modal-close btn-icon" style="border: none;">✕</button>
+      </div>
+      <form id="createTaskForm">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="taskTitle">Task Title *</label>
+            <input 
+              type="text" 
+              name="title" 
+              id="taskTitle" 
+              class="form-control" 
+              placeholder="e.g., Complete Software Engineering Report" 
+              required
+            >
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="taskDescription">Description</label>
+            <textarea 
+              name="description" 
+              id="taskDescription" 
+              class="form-control" 
+              placeholder="Add key notes, links, or instructions..."
+            ></textarea>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label class="form-label" for="taskCategory">Category</label>
+              <select name="category" id="taskCategory" class="form-control">
+                <option value="College">College</option>
+                <option value="Personal" selected>Personal</option>
+                <option value="Project">Project</option>
+                <option value="Work">Work</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="taskPriority">Priority</label>
+              <select name="priority" id="taskPriority" class="form-control">
+                <option value="Low">Low</option>
+                <option value="Medium" selected>Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label class="form-label" for="taskStatus">Status</label>
+              <select name="status" id="taskStatus" class="form-control">
+                <option value="Pending" selected>Pending</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Completed">Completed</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="taskDueDate">Due Date</label>
+              <input type="date" name="dueDate" id="taskDueDate" class="form-control">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-close">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. Edit Task Modal -->
+  <div class="modal-overlay" id="editTaskModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="font-size: 1.25rem;">Edit Task</h3>
+        <button class="modal-close btn-icon" style="border: none;">✕</button>
+      </div>
+      <form id="editTaskForm">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="editTitle">Task Title *</label>
+            <input type="text" name="editTitle" id="editTitle" class="form-control" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="editDescription">Description</label>
+            <textarea name="editDescription" id="editDescription" class="form-control"></textarea>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label class="form-label" for="editCategory">Category</label>
+              <select name="editCategory" id="editCategory" class="form-control">
+                <option value="College">College</option>
+                <option value="Personal">Personal</option>
+                <option value="Project">Project</option>
+                <option value="Work">Work</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="editPriority">Priority</label>
+              <select name="editPriority" id="editPriority" class="form-control">
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label class="form-label" for="editStatus">Status</label>
+              <select name="editStatus" id="editStatus" class="form-control">
+                <option value="Pending">Pending</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Completed">Completed</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="editDueDate">Due Date</label>
+              <input type="date" name="editDueDate" id="editDueDate" class="form-control">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-close">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. View Task Details Modal -->
+  <div class="modal-overlay" id="detailsTaskModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="font-size: 1.25rem;">Task Details</h3>
+        <button class="modal-close btn-icon" style="border: none;">✕</button>
+      </div>
+      <div class="modal-body" id="taskDetailsBody">
+        <!-- Rendered dynamically -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary modal-close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Delete Confirmation Modal -->
+  <div class="modal-overlay" id="deleteTaskModal">
+    <div class="modal-content" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 style="font-size: 1.25rem; color: var(--danger);">Confirm Delete</h3>
+        <button class="modal-close btn-icon" style="border: none;">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 0.75rem;">Are you sure you want to permanently delete this task?</p>
+        <p style="font-weight: 700; color: var(--text-primary);" id="deleteTaskTitle">"Task Title"</p>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary modal-close">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete Task</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. User Profile / Settings Modal -->
+  <div class="modal-overlay" id="profileModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="font-size: 1.25rem;">User Profile & Settings</h3>
+        <button class="modal-close btn-icon" style="border: none;">✕</button>
+      </div>
+      <form id="profileForm">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="profileNameInput">Full Name</label>
+            <input type="text" name="profileName" id="profileNameInput" class="form-control" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="profileEmailInput">Email Address</label>
+            <input type="email" name="profileEmail" id="profileEmailInput" class="form-control" required>
+          </div>
+
+          <div style="border-top: 1px solid var(--border-color); margin: 1.25rem 0 1rem; padding-top: 1rem;">
+            <h4 style="font-size: 1rem; margin-bottom: 0.5rem;">Change Password (Optional)</h4>
+            <div class="form-group">
+              <label class="form-label" for="profileCurrentPassword">Current Password</label>
+              <input type="password" name="currentPassword" id="profileCurrentPassword" class="form-control" placeholder="••••••••">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="profileNewPassword">New Password</label>
+              <input type="password" name="newPassword" id="profileNewPassword" class="form-control" placeholder="Minimum 6 characters">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-close">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Profile</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
