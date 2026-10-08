@@ -26,7 +26,7 @@ app.use(cors({
 }));
 
 // Serve static frontend files from 'public' directory
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -43,7 +43,10 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/tasks', require('./routes/taskRoutes'));
 
 // Fallback route for SPA / direct navigation to HTML pages
-app.get('/', (req, res) => {
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
@@ -53,14 +56,17 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-const server = app.listen(PORT, () => {
-  console.log(`🚀 Task Manager Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
-  console.log(`🌐 Web App URL: http://localhost:${PORT}`);
-});
+// Only start the HTTP listener if not running in a Vercel serverless environment
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Task Manager Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+    console.log(`🌐 Web App URL: http://localhost:${PORT}`);
+  });
+}
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
   console.error(`Unhandled Rejection Error: ${err.message}`);
 });
 
-module.exports = server;
+module.exports = app;
